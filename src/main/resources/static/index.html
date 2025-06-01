@@ -1,33 +1,41 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Gerenciamento de Alunos e Chamada</title>
+
+    <!-- CSS -->
     <link rel="stylesheet" href="style.css">
+
+    <!-- Carrega JS depois do DOM (defer) -->
+    <script src="script.js" defer></script>
 </head>
 <body>
 <div class="container">
     <h1>Sistema de Alunos e Chamada</h1>
 
+    <!-- ================= REGISTRAR ALUNO ================ -->
     <section id="register-student">
-        <h2>Registrar Novo Aluno</h2>
-        <form id="addAlunoForm">
-            <label for="alunoName">Nome:</label>
-            <input type="text" id="alunoName" required>
+        <h2>Registrar novo aluno</h2>
+        <form id="addAlunoForm" autocomplete="off">
+            <label for="alunoName">Nome</label>
+            <input type="text" id="alunoName" required placeholder="Ex.: Ana Silva">
 
-            <label for="alunoNumber">Número de Matrícula:</label>
-            <input type="number" id="alunoNumber" required>
+            <label for="alunoNumber">Número de matrícula</label>
+            <input type="number" id="alunoNumber" required min="1" placeholder="Ex.: 123">
 
-            <button type="submit">Adicionar Aluno</button>
+            <button type="submit">Adicionar aluno</button>
         </form>
         <p id="addAlunoMessage" class="message"></p>
     </section>
 
+    <!-- ================= LISTA DE ALUNOS ================ -->
     <section id="student-list">
-        <h2>Lista de Alunos</h2>
-        <button id="refreshStudents">Atualizar Lista</button>
-        <table id="alunosTable">
+        <h2>Lista de alunos</h2>
+        <button id="refreshStudents">Atualizar lista</button>
+
+        <table id="alunosTable" aria-describedby="listAlunoMessage">
             <thead>
             <tr>
                 <th>ID</th>
@@ -36,20 +44,24 @@
                 <th>Ações</th>
             </tr>
             </thead>
-            <tbody>
-            </tbody>
+            <tbody><!-- preenchido via JS --></tbody>
         </table>
+
         <p id="listAlunoMessage" class="message"></p>
     </section>
 
+    <!-- ================= CHAMADA ================ -->
     <section id="attendance">
-        <h2>Fazer Chamada</h2>
-        <p>Selecione uma data para a chamada:</p>
-        <input type="date" id="attendanceDate" value="">
-        <button id="startAttendance">Iniciar Chamada para a Data</button>
+        <h2>Fazer chamada</h2>
 
-        <div id="attendanceList" style="display: none;">
+        <label for="attendanceDate">Data da chamada</label>
+        <input type="date" id="attendanceDate">
+
+        <button id="startAttendance">Iniciar chamada</button>
+
+        <div id="attendanceList" hidden>
             <h3>Chamada para <span id="currentAttendanceDate"></span></h3>
+
             <form id="attendanceForm">
                 <table id="attendanceTable">
                     <thead>
@@ -59,16 +71,15 @@
                         <th>Presente</th>
                     </tr>
                     </thead>
-                    <tbody>
-                    </tbody>
+                    <tbody><!-- preenchido via JS --></tbody>
                 </table>
-                <button type="submit">Salvar Chamada</button>
+
+                <button type="submit">Salvar chamada</button>
             </form>
+
             <p id="attendanceMessage" class="message"></p>
         </div>
     </section>
 </div>
-
-<script src="script.js"></script>
 </body>
 </html>

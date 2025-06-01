@@ -1,29 +1,26 @@
 package org.vitor.appdistribuido.Alunos;
 
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
-import org.springframework.http.HttpStatus;
 
 import java.util.List;
 import java.util.Objects;
-import java.util.Optional;
 
+@Slf4j
 @Service
+@RequiredArgsConstructor      // injecção via construtor
 public class AlunosService {
 
     private final AlunosRepository alunosRepository;
 
-    @Autowired
-    public AlunosService(AlunosRepository alunosRepository) {
-        this.alunosRepository = alunosRepository;
-    }
-
+    /* ------------------ READ ------------------ */
     public List<Alunos> getAlunos() {
         return alunosRepository.findAll();
     }
-
 
     public List<Alunos> getAlunosSortedByName() {
         return alunosRepository.findAllByOrderByNameAsc();
@@ -32,49 +29,44 @@ public class AlunosService {
     public Alunos getAlunoById(Long id) {
         return alunosRepository.findById(id)
                 .orElseThrow(() -> new ResponseStatusException(
-                        HttpStatus.NOT_FOUND, "Aluno com id " + id + " não encontrado "
-                ));
+                        HttpStatus.NOT_FOUND, "Aluno com id %d não encontrado".formatted(id)));
     }
 
+    /* ------------------ CREATE ------------------ */
+    @Transactional
     public void addNewAluno(Alunos aluno) {
-        Optional<Alunos> alunoOptional = alunosRepository.findByNumber(aluno.getNumber());
-        if (alunoOptional.isPresent()) {
+        if (alunosRepository.existsByNumber(aluno.getNumber())) {
             throw new ResponseStatusException(
-                    HttpStatus.CONFLICT, "Number " + aluno.getNumber() + " Já tomados"
-            );
+                    HttpStatus.CONFLICT, "Número %d já está em uso".formatted(aluno.getNumber()));
         }
         alunosRepository.save(aluno);
-        System.out.println("Novo aluno adicionado : " + aluno);
+        log.info("Novo aluno adicionado: {}", aluno);
     }
 
+    /* ------------------ DELETE ------------------ */
+    @Transactional
     public void deleteAluno(Long alunoId) {
-        boolean exists = alunosRepository.existsById(alunoId);
-        if (!exists) {
+        if (!alunosRepository.existsById(alunoId)) {
             throw new ResponseStatusException(
-                    HttpStatus.NOT_FOUND, "Aluno with id " + alunoId + " Não existente "
-            );
+                    HttpStatus.NOT_FOUND, "Aluno com id %d não existe".formatted(alunoId));
         }
         alunosRepository.deleteById(alunoId);
-        System.out.println("Aluno deletado: " + alunoId);
+        log.info("Aluno deletado: {}", alunoId);
     }
 
+    /* ------------------ UPDATE ------------------ */
     @Transactional
     public void updateAluno(Long alunoId, String name, Integer number) {
-        Alunos aluno = alunosRepository.findById(alunoId)
-                .orElseThrow(() -> new ResponseStatusException(
-                        HttpStatus.NOT_FOUND, "Aluno com id " + alunoId + " não foi encontrado"
-                ));
+        Alunos aluno = getAlunoById(alunoId); // lança 404 se não existir
 
-        if (name != null && !name.isEmpty() && !Objects.equals(aluno.getName(), name)) {
+        if (name != null && !name.isBlank() && !Objects.equals(aluno.getName(), name)) {
             aluno.setName(name);
         }
 
         if (number != null && !Objects.equals(aluno.getNumber(), number)) {
-            Optional<Alunos> alunoOptional = alunosRepository.findByNumber(number);
-            if (alunoOptional.isPresent() && !Objects.equals(alunoOptional.get().getId(), alunoId)) {
+            if (alunosRepository.existsByNumber(number)) {
                 throw new ResponseStatusException(
-                        HttpStatus.CONFLICT, "Número " + number + " Número em uso!"
-                );
+                        HttpStatus.CONFLICT, "Número %d já está em uso".formatted(number));
             }
             aluno.setNumber(number);
         }

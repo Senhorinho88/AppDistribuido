@@ -1,264 +1,254 @@
 document.addEventListener('DOMContentLoaded', () => {
-    const API_BASE_URL = 'http://localhost:8080/api/v1/alunos'; // Your Spring Boot API URL
+    /* ------------------------------------------------------------
+     *  Endpoints REST
+     * ---------------------------------------------------------- */
+    const API_ALUNOS     = 'http://localhost:8080/api/v1/alunos';
+    const API_PRESENCAS  = 'http://localhost:8080/api/presencas';
 
-    // --- Elements ---
-    const addAlunoForm = document.getElementById('addAlunoForm');
-    const alunoNameInput = document.getElementById('alunoName');
-    const alunoNumberInput = document.getElementById('alunoNumber');
-    const addAlunoMessage = document.getElementById('addAlunoMessage');
+    /* ------------------------------------------------------------
+     *  Elementos da página
+     * ---------------------------------------------------------- */
+    // Cadastro de aluno
+    const addAlunoForm      = document.getElementById('addAlunoForm');
+    const alunoNameInput    = document.getElementById('alunoName');
+    const alunoNumberInput  = document.getElementById('alunoNumber');
+    const addAlunoMessage   = document.getElementById('addAlunoMessage');
 
-    const alunosTableBody = document.querySelector('#alunosTable tbody');
-    const refreshStudentsButton = document.getElementById('refreshStudents');
-    const listAlunoMessage = document.getElementById('listAlunoMessage');
+    // Tabela de alunos
+    const alunosTableBody   = document.querySelector('#alunosTable tbody');
+    const refreshBtn        = document.getElementById('refreshStudents');
+    const listAlunoMessage  = document.getElementById('listAlunoMessage');
 
-    const attendanceDateInput = document.getElementById('attendanceDate');
-    const startAttendanceButton = document.getElementById('startAttendance');
-    const attendanceListDiv = document.getElementById('attendanceList');
-    const currentAttendanceDateSpan = document.getElementById('currentAttendanceDate');
-    const attendanceTableBody = document.querySelector('#attendanceTable tbody');
-    const attendanceForm = document.getElementById('attendanceForm');
-    const attendanceMessage = document.getElementById('attendanceMessage');
+    // Chamada
+    const attendanceDateInput  = document.getElementById('attendanceDate');
+    const startAttendanceBtn   = document.getElementById('startAttendance');
+    const attendanceListDiv    = document.getElementById('attendanceList');
+    const currentDateSpan      = document.getElementById('currentAttendanceDate');
+    const attendanceTableBody  = document.querySelector('#attendanceTable tbody');
+    const attendanceForm       = document.getElementById('attendanceForm');
+    const attendanceMessage    = document.getElementById('attendanceMessage');
 
-    // Set today's date as default for attendance
-    const today = new Date();
-    const yyyy = today.getFullYear();
-    const mm = String(today.getMonth() + 1).padStart(2, '0'); // Months start at 0!
-    const dd = String(today.getDate()).padStart(2, '0');
-    attendanceDateInput.value = `${yyyy}-${mm}-${dd}`;
-
-
-    // --- Functions ---
-
-    // Generic message display
-    function showMessage(element, message, type) {
-        element.textContent = message;
+    /* ------------------------------------------------------------
+     *  Utilidades
+     * ---------------------------------------------------------- */
+    function showMessage(element, text, type) {
+        element.textContent = text;
         element.className = `message ${type}`;
         setTimeout(() => {
             element.textContent = '';
             element.className = 'message';
-        }, 5000); // Clear message after 5 seconds
+        }, 5000);
     }
 
-    // Load students into the table
+    /* ------------------------------------------------------------
+     *  Carregar alunos
+     * ---------------------------------------------------------- */
     async function loadAlunos() {
-        alunosTableBody.innerHTML = '<tr><td colspan="4">Carregando alunos...</td></tr>';
+        alunosTableBody.innerHTML = '<tr><td colspan="4">Carregando...</td></tr>';
         listAlunoMessage.textContent = '';
-        try {
-            const response = await fetch(API_BASE_URL);
-            if (!response.ok) {
-                const errorText = await response.text();
-                throw new Error(`HTTP error! status: ${response.status}, message: ${errorText}`);
-            }
-            const alunos = await response.json();
-            alunosTableBody.innerHTML = ''; // Clear existing rows
 
-            if (alunos.length === 0) {
-                alunosTableBody.innerHTML = '<tr><td colspan="4">Nenhum aluno registrado.</td></tr>';
+        try {
+            const res = await fetch(API_ALUNOS);
+            if (!res.ok) throw new Error(await res.text());
+
+            const alunos = await res.json();
+            alunosTableBody.innerHTML = '';
+
+            if (!alunos.length) {
+                alunosTableBody.innerHTML =
+                    '<tr><td colspan="4">Nenhum aluno registrado.</td></tr>';
                 return;
             }
 
-            alunos.forEach(aluno => {
+            alunos.forEach(a => {
                 const row = alunosTableBody.insertRow();
-                row.insertCell(0).textContent = aluno.id;
-                row.insertCell(1).textContent = aluno.number;
-                row.insertCell(2).textContent = aluno.name;
-                const actionsCell = row.insertCell(3);
-                actionsCell.className = 'action-buttons';
+                row.insertCell(0).textContent = a.id;
+                row.insertCell(1).textContent = a.number;
+                row.insertCell(2).textContent = a.name;
 
-                // Edit Button (Placeholder - requires more complex logic for actual editing)
-                const editButton = document.createElement('button');
-                editButton.textContent = 'Editar';
-                editButton.onclick = () => alert('Funcionalidade de edição ainda não implementada.'); // For simplicity
-                actionsCell.appendChild(editButton);
+                const actions = row.insertCell(3);
+                actions.className = 'action-buttons';
 
-                // Delete Button
-                const deleteButton = document.createElement('button');
-                deleteButton.textContent = 'Excluir';
-                deleteButton.className = 'delete';
-                deleteButton.onclick = async () => {
-                    if (confirm(`Tem certeza que deseja excluir o aluno ${aluno.name}?`)) {
-                        try {
-                            const deleteResponse = await fetch(`${API_BASE_URL}/${aluno.id}`, {
-                                method: 'DELETE'
-                            });
-                            if (!deleteResponse.ok) {
-                                const errorText = await deleteResponse.text();
-                                throw new Error(`Erro ao excluir: ${deleteResponse.status}, ${errorText}`);
-                            }
-                            showMessage(listAlunoMessage, 'Aluno excluído com sucesso!', 'success');
-                            loadAlunos(); // Reload the list
-                        } catch (error) {
-                            console.error('Erro ao excluir aluno:', error);
-                            showMessage(listAlunoMessage, `Erro ao excluir aluno: ${error.message}`, 'error');
-                        }
-                    }
-                };
-                actionsCell.appendChild(deleteButton);
+                // Botão Excluir
+                const del = document.createElement('button');
+                del.textContent = 'Excluir';
+                del.className = 'delete';
+                del.onclick = () => deleteAluno(a);
+                actions.appendChild(del);
             });
-        } catch (error) {
-            console.error('Erro ao carregar alunos:', error);
-            showMessage(listAlunoMessage, `Erro ao carregar alunos: ${error.message}`, 'error');
-            alunosTableBody.innerHTML = '<tr><td colspan="4">Falha ao carregar alunos.</td></tr>';
+        } catch (err) {
+            console.error(err);
+            showMessage(listAlunoMessage, `Erro ao carregar alunos: ${err.message}`, 'error');
+            alunosTableBody.innerHTML =
+                '<tr><td colspan="4">Falha ao carregar alunos.</td></tr>';
         }
     }
 
-    // --- Event Listeners ---
+    async function deleteAluno(aluno) {
+        if (!confirm(`Excluir o aluno ${aluno.name}?`)) return;
+        try {
+            const res = await fetch(`${API_ALUNOS}/${aluno.id}`, { method: 'DELETE' });
+            if (!res.ok) throw new Error(await res.text());
 
-    // Add new student form submission
-    addAlunoForm.addEventListener('submit', async (event) => {
-        event.preventDefault(); // Prevent default form submission
+            showMessage(listAlunoMessage, 'Aluno excluído!', 'success');
+            loadAlunos();
+        } catch (err) {
+            console.error(err);
+            showMessage(listAlunoMessage, `Erro: ${err.message}`, 'error');
+        }
+    }
 
-        const name = alunoNameInput.value.trim();
-        const number = parseInt(alunoNumberInput.value.trim());
+    /* ------------------------------------------------------------
+     *  Evento: Cadastrar aluno
+     * ---------------------------------------------------------- */
+    addAlunoForm.addEventListener('submit', async e => {
+        e.preventDefault();
 
-        if (!name || isNaN(number)) {
-            showMessage(addAlunoMessage, 'Por favor, preencha nome e número válidos.', 'error');
+        const name   = alunoNameInput.value.trim();
+        const number = parseInt(alunoNumberInput.value.trim(), 10);
+
+        if (!name || Number.isNaN(number)) {
+            showMessage(addAlunoMessage, 'Nome e número são obrigatórios.', 'error');
             return;
         }
 
-        const newAluno = { name, number };
-
         try {
-            const response = await fetch(API_BASE_URL, {
+            const res = await fetch(API_ALUNOS, {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify(newAluno)
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ name, number })
             });
+            if (!res.ok) throw new Error(await res.text());
 
-            if (response.status === 409) { // Conflict (e.g., number already taken)
-                const errorMessage = await response.text();
-                throw new Error(errorMessage);
-            }
-            if (!response.ok) {
-                const errorText = await response.text();
-                throw new Error(`HTTP error! status: ${response.status}, message: ${errorText}`);
-            }
-
-            showMessage(addAlunoMessage, 'Aluno adicionado com sucesso!', 'success');
-            addAlunoForm.reset(); // Clear the form
-            loadAlunos(); // Reload the student list
-        } catch (error) {
-            console.error('Erro ao adicionar aluno:', error);
-            showMessage(addAlunoMessage, `Erro ao adicionar aluno: ${error.message}`, 'error');
+            showMessage(addAlunoMessage, 'Aluno cadastrado!', 'success');
+            addAlunoForm.reset();
+            loadAlunos();
+        } catch (err) {
+            console.error(err);
+            showMessage(addAlunoMessage, `Erro: ${err.message}`, 'error');
         }
     });
 
-    // Refresh students button
-    refreshStudentsButton.addEventListener('click', loadAlunos);
-
-
-    // Start attendance button
-    startAttendanceButton.addEventListener('click', async () => {
-        const attendanceDate = attendanceDateInput.value;
-        if (!attendanceDate) {
-            showMessage(attendanceMessage, 'Por favor, selecione uma data para a chamada.', 'error');
+    /* ------------------------------------------------------------
+     *  Evento: Listar alunos na chamada
+     * ---------------------------------------------------------- */
+    startAttendanceBtn.addEventListener('click', async () => {
+        const dateStr = attendanceDateInput.value;
+        if (!dateStr) {
+            showMessage(attendanceMessage, 'Selecione uma data.', 'error');
             return;
         }
 
-        currentAttendanceDateSpan.textContent = new Date(attendanceDate).toLocaleDateString('pt-BR');
-        attendanceTableBody.innerHTML = ''; // Clear previous attendance list
-        attendanceMessage.textContent = ''; // Clear previous messages
+        currentDateSpan.textContent =
+            new Date(dateStr).toLocaleDateString('pt-BR', { timeZone: 'UTC' });
+        attendanceTableBody.innerHTML = '';
+        attendanceMessage.textContent = '';
 
         try {
-            const response = await fetch(API_BASE_URL); // Get all students
-            if (!response.ok) {
-                const errorText = await response.text();
-                throw new Error(`HTTP error! status: ${response.status}, message: ${errorText}`);
-            }
-            const alunos = await response.json();
+            const res = await fetch(API_ALUNOS);
+            if (!res.ok) throw new Error(await res.text());
 
-            if (alunos.length === 0) {
-                attendanceTableBody.innerHTML = '<tr><td colspan="3">Nenhum aluno para a chamada.</td></tr>';
+            const alunos = await res.json();
+            if (!alunos.length) {
+                attendanceTableBody.innerHTML =
+                    '<tr><td colspan="3">Nenhum aluno para chamada.</td></tr>';
                 attendanceListDiv.style.display = 'block';
                 return;
             }
 
-            alunos.sort((a, b) => a.number - b.number); // Sort by number for calling list
-
-            alunos.forEach(aluno => {
+            alunos.sort((a, b) => a.number - b.number);
+            alunos.forEach(a => {
                 const row = attendanceTableBody.insertRow();
-                row.insertCell(0).textContent = aluno.number;
-                row.insertCell(1).textContent = aluno.name;
-                const checkboxCell = row.insertCell(2);
+                row.insertCell(0).textContent = a.number;
+                row.insertCell(1).textContent = a.name;
 
-                const checkbox = document.createElement('input');
-                checkbox.type = 'checkbox';
-                checkbox.name = 'presentStudent';
-                checkbox.value = aluno.id; // Use student ID as value
-                checkbox.id = `present-${aluno.id}`;
-                checkbox.checked = true; // Default to present, user unchecks if absent
+                const cb = document.createElement('input');
+                cb.type  = 'checkbox';
+                cb.value = a.id;
+                cb.checked = true;
 
-                const label = document.createElement('label');
-                label.htmlFor = `present-${aluno.id}`;
-                label.textContent = 'Presente'; // You might not need this label for a simple checkbox
-
-                checkboxCell.appendChild(checkbox);
-                // checkboxCell.appendChild(label); // If you want the text label next to the checkbox
+                const cell = row.insertCell(2);
+                cell.appendChild(cb);
             });
 
-            attendanceListDiv.style.display = 'block'; // Show the attendance section
-        } catch (error) {
-            console.error('Erro ao preparar chamada:', error);
-            showMessage(attendanceMessage, `Erro ao preparar chamada: ${error.message}`, 'error');
-            attendanceListDiv.style.display = 'none'; // Hide if error
+            attendanceListDiv.style.display = 'block';
+        } catch (err) {
+            console.error(err);
+            showMessage(attendanceMessage, `Erro: ${err.message}`, 'error');
+            attendanceListDiv.style.display = 'none';
         }
     });
 
-    // Attendance form submission (this will need a backend endpoint for attendance)
-    attendanceForm.addEventListener('submit', async (event) => {
-        event.preventDefault();
+    /* ------------------------------------------------------------
+     *  Evento: Salvar chamada
+     * ---------------------------------------------------------- */
+    attendanceForm.addEventListener('submit', async e => {
+        e.preventDefault();
 
-        const attendanceDate = attendanceDateInput.value;
-        if (!attendanceDate) {
-            showMessage(attendanceMessage, 'Erro: Data da chamada não definida.', 'error');
+        const dateStr = attendanceDateInput.value;
+        if (!dateStr) {
+            showMessage(attendanceMessage, 'Data não definida.', 'error');
             return;
         }
 
-        const presentAlunoIds = Array.from(attendanceTableBody.querySelectorAll('input[name="presentStudent"]:checked'))
-            .map(checkbox => parseInt(checkbox.value));
-        const allAlunoIds = Array.from(attendanceTableBody.querySelectorAll('input[name="presentStudent"]'))
-            .map(checkbox => parseInt(checkbox.value));
+        const presentIds = Array.from(
+            attendanceTableBody.querySelectorAll('input:checked')
+        ).map(cb => parseInt(cb.value, 10));
 
-        // For a simple demo, we'll just log this.
-        // In a real application, you would send this data to a *new* Spring Boot API endpoint
-        // that handles saving attendance for a specific date.
-        console.log('Dados da Chamada para ' + attendanceDate + ':');
-        console.log('Alunos presentes (IDs):', presentAlunoIds);
-        console.log('Todos os alunos (IDs):', allAlunoIds);
+        const allIds = Array.from(
+            attendanceTableBody.querySelectorAll('input')
+        ).map(cb => parseInt(cb.value, 10));
 
-        // --- IMPORTANT: Backend for attendance is missing ---
-        // You would need a new entity (e.g., 'Attendance'), a new repository,
-        // a new service, and a new controller endpoint in Spring Boot to handle
-        // saving this attendance data.
-        // Example structure:
-        /*
-        const attendanceData = {
-            date: attendanceDate,
-            presentStudentIds: presentAlunoIds,
-            absentStudentIds: allAlunoIds.filter(id => !presentAlunoIds.includes(id))
-        };
+        /* ---------- Salvar via API Presenças ---------- */
         try {
-            const response = await fetch('http://localhost:8080/api/v1/attendance', { // NEW ENDPOINT
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(attendanceData)
-            });
-            if (!response.ok) {
-                throw new Error('Falha ao salvar chamada.');
-            }
-            showMessage(attendanceMessage, 'Chamada salva com sucesso!', 'success');
-        } catch (error) {
-            console.error('Erro ao salvar chamada:', error);
-            showMessage(attendanceMessage, `Erro ao salvar chamada: ${error.message}`, 'error');
-        }
-        */
+            const isToday =
+                dateStr === new Date().toISOString().substring(0, 10); // yyyy-MM-dd
 
-        showMessage(attendanceMessage, 'Chamada processada (necessita de backend para salvar).', 'success');
+            const requests = allIds.map(id => {
+                const presente = presentIds.includes(id);
+
+                if (!presente) return Promise.resolve(); // ausente -> ignorado
+
+                // Presente: usa /marcar ou /marcar-data
+                if (isToday) {
+                    return fetch(`${API_PRESENCAS}/marcar/${id}`, {
+                        method: 'POST'
+                    });
+                } else {
+                    const body = {
+                        alunoId: id,
+                        dataHora: `${dateStr}T00:00:00`
+                    };
+                    return fetch(`${API_PRESENCAS}/marcar-data`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(body)
+                    });
+                }
+            });
+
+            const results = await Promise.all(requests);
+            const failed  = results.filter(r => r && !r.ok);
+
+            if (failed.length) {
+                const txt = await failed[0].text();
+                throw new Error(`Falha em ${failed.length} chamadas: ${txt}`);
+            }
+
+            showMessage(attendanceMessage, 'Chamada salva!', 'success');
+        } catch (err) {
+            console.error(err);
+            showMessage(attendanceMessage, `Erro ao salvar chamada: ${err.message}`, 'error');
+        }
     });
 
+    /* ------------------------------------------------------------
+     *  Inicialização
+     * ---------------------------------------------------------- */
+    refreshBtn.addEventListener('click', loadAlunos);
 
-    // --- Initial Load ---
+    // Define hoje como valor padrão da data
+    attendanceDateInput.value = new Date().toISOString().substring(0, 10);
+
     loadAlunos();
 });

@@ -1,6 +1,7 @@
 package org.vitor.appdistribuido.Alunos;
 
-import org.springframework.beans.factory.annotation.Autowired;
+import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -8,56 +9,51 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
-@RequestMapping(path = "api/v1/alunos")
+@RequestMapping("api/v1/alunos")
+@RequiredArgsConstructor
 public class AlunosController {
 
     private final AlunosService alunosService;
 
-    @Autowired
-    public AlunosController(AlunosService alunosService) {
-        this.alunosService = alunosService;
-    }
-
-
+    /* ------------------ LISTAR ------------------ */
     @GetMapping
     public List<Alunos> getAlunos() {
         return alunosService.getAlunos();
     }
 
-
-    @GetMapping(path = "/sortedByName")
+    /* Ordenado por nome (poderia usar ?sort=name,asc) */
+    @GetMapping("/sortedByName")
     public List<Alunos> getAlunosSortedByName() {
         return alunosService.getAlunosSortedByName();
     }
 
-
-
-    @GetMapping(path = "{alunoId}")
-    public Alunos getAlunoById(@PathVariable("alunoId") Long alunoId) {
+    /* ------------------ BUSCAR POR ID ------------------ */
+    @GetMapping("{alunoId}")
+    public Alunos getAlunoById(@PathVariable Long alunoId) {
         return alunosService.getAlunoById(alunoId);
     }
 
-
+    /* ------------------ CRIAR ------------------ */
     @PostMapping
-    public ResponseEntity<String> registerNewAluno(@RequestBody Alunos aluno) {
+    public ResponseEntity<Alunos> registerNewAluno(@Valid @RequestBody Alunos aluno) {
         alunosService.addNewAluno(aluno);
-        return new ResponseEntity<>("Aluno registrado com sucesso!", HttpStatus.CREATED);
+        return ResponseEntity.status(HttpStatus.CREATED).body(aluno);
     }
 
-
-    @DeleteMapping(path = "{alunoId}")
-    public ResponseEntity<String> deleteAluno(@PathVariable("alunoId") Long alunoId) {
+    /* ------------------ DELETAR ------------------ */
+    @DeleteMapping("{alunoId}")
+    public ResponseEntity<Void> deleteAluno(@PathVariable Long alunoId) {
         alunosService.deleteAluno(alunoId);
-        return new ResponseEntity<>("Aluno deletado com sucesso!", HttpStatus.OK);
+        return ResponseEntity.ok().build();
     }
 
-
-    @PutMapping(path = "{alunoId}")
-    public ResponseEntity<String> updateAluno(
-            @PathVariable("alunoId") Long alunoId,
+    /* ------------------ ATUALIZAR ------------------ */
+    @PutMapping("{alunoId}")
+    public ResponseEntity<Void> updateAluno(
+            @PathVariable Long alunoId,
             @RequestParam(required = false) String name,
             @RequestParam(required = false) Integer number) {
         alunosService.updateAluno(alunoId, name, number);
-        return new ResponseEntity<>("Aluno atualizado com sucesso!", HttpStatus.OK);
+        return ResponseEntity.ok().build();
     }
 }
