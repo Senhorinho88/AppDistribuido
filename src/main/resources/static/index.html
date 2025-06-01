@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gerenciamento de Alunos e Chamada</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="container">
+    <h1>Sistema de Alunos e Chamada</h1>
+
+    <section id="register-student">
+        <h2>Registrar Novo Aluno</h2>
+        <form id="addAlunoForm">
+            <label for="alunoName">Nome:</label>
+            <input type="text" id="alunoName" required>
+
+            <label for="alunoNumber">Número de Matrícula:</label>
+            <input type="number" id="alunoNumber" required>
+
+            <button type="submit">Adicionar Aluno</button>
+        </form>
+        <p id="addAlunoMessage" class="message"></p>
+    </section>
+
+    <section id="student-list">
+        <h2>Lista de Alunos</h2>
+        <button id="refreshStudents">Atualizar Lista</button>
+        <table id="alunosTable">
+            <thead>
+            <tr>
+                <th>ID</th>
+                <th>Número</th>
+                <th>Nome</th>
+                <th>Ações</th>
+            </tr>
+            </thead>
+            <tbody>
+            </tbody>
+        </table>
+        <p id="listAlunoMessage" class="message"></p>
+    </section>
+
+    <section id="attendance">
+        <h2>Fazer Chamada</h2>
+        <p>Selecione uma data para a chamada:</p>
+        <input type="date" id="attendanceDate" value="">
+        <button id="startAttendance">Iniciar Chamada para a Data</button>
+
+        <div id="attendanceList" style="display: none;">
+            <h3>Chamada para <span id="currentAttendanceDate"></span></h3>
+            <form id="attendanceForm">
+                <table id="attendanceTable">
+                    <thead>
+                    <tr>
+                        <th>Número</th>
+                        <th>Nome</th>
+                        <th>Presente</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    </tbody>
+                </table>
+                <button type="submit">Salvar Chamada</button>
+            </form>
+            <p id="attendanceMessage" class="message"></p>
+        </div>
+    </section>
+</div>
+
+<script src="script.js"></script>
+</body>
+</html>
